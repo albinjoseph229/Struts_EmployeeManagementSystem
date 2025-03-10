@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE struts PUBLIC
+        "-//Apache Software Foundation//DTD Struts Configuration 2.5//EN"
+        "http://struts.apache.org/dtds/struts-2.5.dtd">
+<struts>
+    <constant name="struts.devMode" value="true" />
+    <constant name="struts.ui.theme" value="simple" />
+
+    <package name="employee" extends="struts-default" namespace="/">
+
+        <default-action-ref name="listEmployees" />
+        <!-- Global Results -->
+        <global-results>
+            <result name="error">/WEB-INF/views/error.jsp</result>
+        </global-results>
+
+        <!-- Employee list action -->
+        <action name="listEmployees" class="com.example.action.EmployeeAction" method="list">
+            <result name="success">/WEB-INF/views/listEmployees.jsp</result>
+        </action>
+
+        <!-- Add employee form display action -->
+        <action name="addEmployeeForm" class="com.example.action.EmployeeAction" method="addForm">
+            <result name="success">/WEB-INF/views/addEmployee.jsp</result>
+        </action>
+
+        <!-- Add employee action -->
+        <action name="addEmployee" class="com.example.action.EmployeeAction" method="add">
+            <result name="success" type="redirectAction">listEmployees</result>
+            <result name="input">/WEB-INF/views/addEmployee.jsp</result>
+        </action>
+
+        <!-- Edit employee form display action -->
+        <action name="editEmployeeForm" class="com.example.action.EmployeeAction" method="editForm">
+            <result name="success">/WEB-INF/views/editEmployee.jsp</result>
+        </action>
+
+        <!-- Update employee action -->
+        <action name="updateEmployee" class="com.example.action.EmployeeAction" method="update">
+            <result name="success" type="redirectAction">listEmployees</result>
+            <result name="input">/WEB-INF/views/editEmployee.jsp</result>
+        </action>
+
+        <!-- Delete employee action -->
+        <action name="deleteEmployee" class="com.example.action.EmployeeAction" method="delete">
+            <result name="success" type="redirectAction">listEmployees</result>
+        </action>
+    </package>
+</struts>
