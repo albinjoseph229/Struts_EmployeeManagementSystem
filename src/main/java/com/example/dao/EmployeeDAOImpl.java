@@ -14,8 +14,7 @@ public class EmployeeDAOImpl implements EmployeeDAO {
         Transaction transaction = null;
         Long employeeId = null;
 
-        try {
-            Session session = HibernateUtil.getSessionFactory().getCurrentSession();
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             transaction = session.beginTransaction();
             employeeId = (Long) session.save(employee);
             transaction.commit();
@@ -33,11 +32,24 @@ public class EmployeeDAOImpl implements EmployeeDAO {
     public void updateEmployee(Employee employee) {
         Transaction transaction = null;
 
-        try {
-            Session session = HibernateUtil.getSessionFactory().getCurrentSession();
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             transaction = session.beginTransaction();
-            session.update(employee);
-            transaction.commit();
+
+            Employee existingEmployee = session.get(Employee.class, employee.getId());
+            if (existingEmployee != null) {
+                if (employee.getName() != null && !employee.getName().isEmpty()) {
+                    existingEmployee.setName(employee.getName());
+                }
+                if (employee.getEmail() != null && !employee.getEmail().isEmpty()) {
+                    existingEmployee.setEmail(employee.getEmail());
+                }
+                if (employee.getSalary() != null) {
+                    existingEmployee.setSalary(employee.getSalary());
+                }
+
+                session.update(existingEmployee);
+                transaction.commit();
+            }
         } catch (Exception e) {
             if (transaction != null) {
                 transaction.rollback();
@@ -50,8 +62,7 @@ public class EmployeeDAOImpl implements EmployeeDAO {
     public void deleteEmployee(Long id) {
         Transaction transaction = null;
 
-        try {
-            Session session = HibernateUtil.getSessionFactory().getCurrentSession();
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             transaction = session.beginTransaction();
             Employee employee = session.get(Employee.class, id);
             if (employee != null) {
@@ -70,11 +81,8 @@ public class EmployeeDAOImpl implements EmployeeDAO {
     public Employee getEmployeeById(Long id) {
         Employee employee = null;
 
-        try {
-            Session session = HibernateUtil.getSessionFactory().getCurrentSession();
-            session.beginTransaction();
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             employee = session.get(Employee.class, id);
-            session.getTransaction().commit();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -86,11 +94,8 @@ public class EmployeeDAOImpl implements EmployeeDAO {
     public List<Employee> getAllEmployees() {
         List<Employee> employees = null;
 
-        try {
-            Session session = HibernateUtil.getSessionFactory().getCurrentSession();
-            session.beginTransaction();
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             employees = session.createQuery("FROM Employee", Employee.class).list();
-            session.getTransaction().commit();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -100,25 +105,15 @@ public class EmployeeDAOImpl implements EmployeeDAO {
 
     @Override
     public boolean isEmailUnique(String email, Long id) {
-        try {
-            Session session = HibernateUtil.getSessionFactory().getCurrentSession();
-            session.beginTransaction();
-            String hql = "FROM Employee WHERE email = :email";
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            String hql = "FROM Employee WHERE email = :email AND id <> :id";
             Query<Employee> query = session.createQuery(hql, Employee.class);
             query.setParameter("email", email);
+            query.setParameter("id", id != null ? id : -1L); // Avoid null ID
 
             Employee employee = query.uniqueResult();
-            session.getTransaction().commit();
 
-            if (employee == null) {
-                return true;
-            }
-
-            if (id != null) {
-                return employee.getId().equals(id);
-            }
-
-            return false;
+            return employee == null; // If no other employee has this email, it's unique
         } catch (Exception e) {
             e.printStackTrace();
             return false;
